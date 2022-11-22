@@ -14,6 +14,7 @@ import glob
 import os
 import sys
 import shutil
+import subprocess
 #import netCDF4 as nc4
 #import matplotlib.pyplot as plt
 #import matplotlib.dates as mdates
@@ -262,13 +263,20 @@ def CorrectorFile(fid):
     f1=open(FileCorre,'w+')
     f=open(NameFile,'r')
     
-    #try:
-    file_length = len(f.read().split('\n'))
-    #except:
-        # rstr=f.read()
-        # rstr.encode('utf-8','ignore').decode("utf-8")
-        # file_length = len(rstr.split('\n'))
-    
+    try: # this might fail due to non-utf8 characters in input file
+        file_length = len(f.read().split('\n'))
+    except: # correct non-utf8 characters
+        f.close()
+        NameFile2=NameFile[0:-4]+'utf8'+NameFile[-4:]
+        command='iconv -f utf-8 -t utf-8 -c '+NameFile+' >> '+NameFile2
+        os.system(command)
+        # subprocess.run(command.split(), stdout=subprocess.DEVNULL)
+        command='mv '+NameFile2+' '+NameFile
+        os.system(command)
+        f=open(NameFile,'r')
+        file_length = len(f.read().split('\n'))
+        
+        
     #totallines=(file_length-7)/67   ### why -7 and not -1
     totallines=(file_length-1)/67 
     f.close()
@@ -1457,7 +1465,7 @@ os.chdir(Root)
 if ~np.isnan(h0_opt):
     print('\nThe antenna height has been changed to ',str(h0_opt),' m\n')
 
-print('The integration time has been set to ',str(IntTime),'\n')
+print('The integration time has been set to ',str(IntTime),' sec\n')
 print('The work directory has been set to ',Root,'\n')
 
 folder=Root
