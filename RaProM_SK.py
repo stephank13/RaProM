@@ -14,7 +14,7 @@ import glob
 import os
 import sys
 import shutil
-import subprocess
+#import subprocess
 #import netCDF4 as nc4
 #import matplotlib.pyplot as plt
 #import matplotlib.dates as mdates
@@ -269,14 +269,14 @@ def CorrectorFile(fid):
         f.close()
         NameFile2=NameFile[0:-4]+'utf8'+NameFile[-4:]
         command='iconv -f utf-8 -t utf-8 -c '+NameFile+' >> '+NameFile2
+        print('run:'+command)
         os.system(command)
         # subprocess.run(command.split(), stdout=subprocess.DEVNULL)
         command='mv '+NameFile2+' '+NameFile
         os.system(command)
         f=open(NameFile,'r')
         file_length = len(f.read().split('\n'))
-        
-        
+                
     #totallines=(file_length-7)/67   ### why -7 and not -1
     totallines=(file_length-1)/67 
     f.close()

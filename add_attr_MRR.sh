@@ -1,6 +1,6 @@
 #!/bin/bash
 #add_attr_MRR.sh
-ncfile=$1
+NC_file=$1
 
 #dat=$(date --utc -I)
 ncatted -O -h \
@@ -25,15 +25,15 @@ ncatted -O -h \
 	-a geospatial_lat_min,global,c,c,"60.3837" \
 	-a geospatial_lon_max,global,c,c,"5.3318" \
 	-a geospatial_lon_min,global,c,c,"5.3318" \
-  -a keywords,global,c,c,"stable boundary layer, wind profile, sodar, remote sensing, observations, turbulence" \
-	-a license,global,c,c,"The current version of the data is for internal use limited to the ISOBAR partners, until it is published." \
+  -a keywords,global,c,c,"radar, ground-based remote sensing, precipitation, observations, atmospheric profiles" \
+	-a license,global,c,c,"The current version of the data is for internal use until it is published." \
 	-a references,global,c,c," " \
   -a doi,global,c,c," " \
   -a cf_role,"time_utc",c,c,"profile_id" \
   -a cf_role,"Height",c,c,"timeseries_id" \
   -a summary,global,c,c,"MRR2 data... " \
   -a id,global,c,c,"doi: " \
-   $ncfile
+   $NC_file
    # -a naming_authority,global,c,c" " \
    # -a processing_level,global,c,c" " \
    # -a commen,global,c,c" " \
