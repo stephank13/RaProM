@@ -318,6 +318,9 @@ def CorrectorFile(fid):
         Hline=f.readline()
         if Hline[-1:]!='\n' or Hline[0]!='H':
             continue
+        Hcolumns=Hline.split()
+        if Hcolumns[2]!='100':
+            continue
         
         # read next line which should transfer function
         TFline=f.readline()
