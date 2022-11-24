@@ -253,7 +253,7 @@ def BB(v,Z,h):#the input are fall speed, equivalent reflectivity and height
 
     return hBBbottom,hBBtop
 
-def CorrectorFile(fid):
+def CorrectorFile(fid,hres):
     NameFile=fid
     FileCorre=NameFile[:-4]+'-corrected.raw' #create a new file
     folderName='Moved'
@@ -284,19 +284,22 @@ def CorrectorFile(fid):
 #    columns=list(' ')
     timeList=list()
     f=open(NameFile,'r')
-    continue_while='false'
-    while line := f.readline():
-
+    continue_while=False
+    lc=0
+    while lc<file_length-1: #line := f.readline():
+#        continue_while1=True
         # read first line 
-        Mline=line
+        Mline=f.readline()
+        lc+=1
         if Mline[-1:]!='\n':
             continue          
         line2=Mline.strip()  
         columns=line2.split()  
 
         # check that first line is header line starting with MRR and find it if not
-        while columns[0]!='MRR':
+        while columns[0]!='MRR' and lc<file_length-1:
             Mline=f.readline()           
+            lc+=1
             if Mline[-1:]!='\n':
                 continue          
             line2=Mline.strip()  
@@ -316,14 +319,22 @@ def CorrectorFile(fid):
                 
         # read next line which should contain height information 
         Hline=f.readline()
+        lc+=1
         if Hline[-1:]!='\n' or Hline[0]!='H':
             continue
-        Hcolumns=Hline.split()
-        if Hcolumns[2]!='100':
+        # select only data with matching height resolution (-l argument, e.g. -l100 for 100m increments)
+        if hres!=np.nan:
+            Hcolumns=Hline.split()
+            if int(Hcolumns[2])!=hres:
+                continue_while=True      # flag to break outer while loop
+                #break
+        if continue_while==True:
+            continue_while=False
             continue
         
         # read next line which should transfer function
         TFline=f.readline()
+        lc+=1
         if TFline[-1:]!='\n' or TFline[0:2]!='TF':
             continue
 
@@ -331,13 +342,14 @@ def CorrectorFile(fid):
         Flines=[]
         for j in range(64):
             Fline=f.readline()
+            lc+=1
             if Fline[-1:]!='\n' or Fline[0:3]!='F'+str(j).zfill(2):
-                continue_while='true'      # flag to break outer while loop
+                continue_while=True      # flag to break outer while loop
                 break
             else:
                 Flines.append(Fline)
-        if continue_while=='true':
-            continue_while='false'
+        if continue_while==True:
+            continue_while=False
             continue
         
         if len(timeList)==0:            # if first time step
@@ -358,10 +370,12 @@ def CorrectorFile(fid):
     f1.close()
     f.close()
     m=file_length-len(timeList)*67-1
-    if m==0:
+    if m==0:                # all data valid
         os.remove(FileCorre)
         OutName=NameFile
-    else:
+    elif len(timeList)==0:  # no valid data
+        OutName=''
+    else:                   # some valid data
         shutil.copy(os.path.join('folder', NameFile), folderName) # move original file
         os.remove(NameFile)
         OutName=FileCorre
@@ -1437,6 +1451,7 @@ if len(sys.argv)==1:
 h0_opt=np.nan#c_opt=0;c1=0;c2=0;c3=0;h0_opt=np.nan
 Root='./'
 IntTime=int(60)
+hres=np.nan
 
 if len(sys.argv)>1:
     for i in sys.argv:
@@ -1458,10 +1473,12 @@ if len(sys.argv)>1:
 ##            option=0
 ##            c_opt+=1
 ##            c3=1
-        if i[0:2]=='-d':
+        elif i[0:2]=='-d':
             Root=(i[2:])
-        if i[0:2]=='-t':
+        elif i[0:2]=='-t':
             IntTime=int(i[2:])
+        elif i[0:2]=='-l':      # select only data with matching height resolution (-l argument, e.g. -l100 for 100m increments)
+            hres=int(i[2:])
 
 os.chdir(Root)
 
@@ -1469,6 +1486,8 @@ if ~np.isnan(h0_opt):
     print('\nThe antenna height has been changed to ',str(h0_opt),' m\n')
 
 print('The integration time has been set to ',str(IntTime),' sec\n')
+if ~np.isnan(hres):
+    print('The height resolution was set to ',str(hres),' m\n')
 print('The work directory has been set to ',Root,'\n')
 
 folder=Root
@@ -1483,7 +1502,11 @@ for name in dircf:
     Nw_2=[];Dm_2=[]
 
     count=0
-    NameFile=CorrectorFile(NameFile)
+    NameFile=CorrectorFile(NameFile,hres)
+    if NameFile=='': # no valid data found 
+        print('no valid data found in '+name)
+        continue
+    
     print('File in process  '+str(NameFile[:-4]))
     filenameplot=NameFile[:-4]+'-processed'
 

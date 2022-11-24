@@ -73,60 +73,66 @@ if [ ! -f $ncfile_out ]; then
 #  fi
   # echo $ncfile_out
 
-  # check height vector
-  grep ^H $rawfile2 | head -n 100  > Hlines.txt
-  if grep -v -q 'H[[:blank:]]*0[[:blank:]]*100' Hlines.txt ; then
-  # if [ ! $(grep -q -v 'H[[:blank:]]*0[[:blank:]]*100' Hlines.txt) ]; then
-  # if [ ! $(grep -q -v 'H          0      100      200      300      400      500      600      700      800      900     1000     1100     1200     1300     1400     1500     1600     1700     1800     1900     2000     2100     2200     2300     2400     2500     2600     2700     2800     2900     3000     3100' Hlines.txt) ]; then
-  # if [ ! $(grep -q -v 'H[[:blank:]]*0[[:blank:]]*35' Hlines.txt) ]; then
-    #grep 'H[[:blank:]]0[[:blank:]]35[[:blank:]]70[[:blank:]]105[[:blank:]]140[[:blank:]]175[[:blank:]]210[[:blank:]]245[[:blank:]]280[[:blank:]]315[[:blank:]]350[[:blank:]]385[[:blank:]]420[[:blank:]]455[[:blank:]]490[[:blank:]]525[[:blank:]]560[[:blank:]]595[[:blank:]]630[[:blank:]]665[[:blank:]]700[[:blank:]]735[[:blank:]]770[[:blank:]]805[[:blank:]]840[[:blank:]]875[[:blank:]]910[[:blank:]]945[[:blank:]]980[[:blank:]]1015[[:blank:]]1050[[:blank:]]1085[[:blank:]]' Hlines.txt
-    echo inconsistent height vectors found
-    mv $rawfile2 $hpath
-  else
+  # # check height vector
+  # grep ^H $rawfile2 | head -n 100  > Hlines.txt
+  # if grep -v -q 'H[[:blank:]]*0[[:blank:]]*100' Hlines.txt ; then
+  # # if [ ! $(grep -q -v 'H[[:blank:]]*0[[:blank:]]*100' Hlines.txt) ]; then
+  # # if [ ! $(grep -q -v 'H          0      100      200      300      400      500      600      700      800      900     1000     1100     1200     1300     1400     1500     1600     1700     1800     1900     2000     2100     2200     2300     2400     2500     2600     2700     2800     2900     3000     3100' Hlines.txt) ]; then
+  # # if [ ! $(grep -q -v 'H[[:blank:]]*0[[:blank:]]*35' Hlines.txt) ]; then
+  #   #grep 'H[[:blank:]]0[[:blank:]]35[[:blank:]]70[[:blank:]]105[[:blank:]]140[[:blank:]]175[[:blank:]]210[[:blank:]]245[[:blank:]]280[[:blank:]]315[[:blank:]]350[[:blank:]]385[[:blank:]]420[[:blank:]]455[[:blank:]]490[[:blank:]]525[[:blank:]]560[[:blank:]]595[[:blank:]]630[[:blank:]]665[[:blank:]]700[[:blank:]]735[[:blank:]]770[[:blank:]]805[[:blank:]]840[[:blank:]]875[[:blank:]]910[[:blank:]]945[[:blank:]]980[[:blank:]]1015[[:blank:]]1050[[:blank:]]1085[[:blank:]]' Hlines.txt
+  #   echo inconsistent height vectors found
+  #   mv $rawfile2 $hpath
+  # else
 
   # reprocess data
   chmod +w $rawfile2
   if [ -f $ncfile.nc ]; then rm $ncfile.nc; fi
 
-  python /home/skr100/MRR/RaProM/RaProM_SK.py -h45 -t60 -d$workpath
+  python /home/skr100/MRR/RaProM/RaProM_SK.py -h45 -t60 -d$workpath -l100
   # python /home/skr100/MRR/RaProM/RaProM_SK.py -h58 -t60 -d$workpath
 
-  # rename files
-  if [ ! $(ls $ncfile*.nc)==$ncfile.nc ]; then mv $ncfile*.nc $ncfile.nc; fi
-  if [ ! $(ls $rawfile3*.raw)==$rawfile2 ]; then mv $rawfile3*.raw $rawfile2; fi
+  # if no nc file generated
+  if [ ! $(ls $ncfile*.nc)]; then
+    mv $(ls $rawfile3*.raw) $rawfile2
+    mv $rawfile2 $hpath
+  else
 
-  if [ -f $ncfile.nc ]; then
-    # compare last time stamp in raw and nc
-    rtstr=$(awk -F" " '{print $2}' <<< $(grep MRR $rawfile2 | tail -n1))
-    rt=$(date -d "20${rtstr:0:2}-${rtstr:2:2}-${rtstr:4:2} ${rtstr:6:2}:${rtstr:8:2}:${rtstr:10:2}" +%s)
-    ntstr=$(awk -F\"  '{print $2}' <<< $(awk -F, '{print $NF}' <<< $(ncdump -v time_utc -t $ncfile.nc | tail)))
-    nt=$(date -d "$ntstr" +%s)
-    if [ $nt -gt $rt ]; then
-      dt=$(expr $nt - $rt)
-    else
-      dt=$(expr $rt - $nt)
-    fi
-    if [ $dt -lt 60 ]; then #echo 'end time in nc and raw file agree' ; fi
+    # rename files
+    if [ ! $(ls $ncfile*.nc)==$ncfile.nc ]; then mv $ncfile*.nc $ncfile.nc; fi
+    if [ ! $(ls $rawfile3*.raw)==$rawfile2 ]; then mv $rawfile3*.raw $rawfile2; fi
 
-      # add global attributes to nc-file
-      . add_attr_MRR.sh $ncfile.nc
+    if [ -f $ncfile.nc ]; then
+      # compare last time stamp in raw and nc
+      rtstr=$(awk -F" " '{print $2}' <<< $(grep MRR $rawfile2 | tail -n1))
+      rt=$(date -d "20${rtstr:0:2}-${rtstr:2:2}-${rtstr:4:2} ${rtstr:6:2}:${rtstr:8:2}:${rtstr:10:2}" +%s)
+      ntstr=$(awk -F\"  '{print $2}' <<< $(awk -F, '{print $NF}' <<< $(ncdump -v time_utc -t $ncfile.nc | tail)))
+      nt=$(date -d "$ntstr" +%s)
+      if [ $nt -gt $rt ]; then
+        dt=$(expr $nt - $rt)
+      else
+        dt=$(expr $rt - $nt)
+      fi
+      if [ $dt -lt 60 ]; then #echo 'end time in nc and raw file agree' ; fi
 
-      # rename and move nc file
-      if [ ! -d $outpath ]; then mkdir $outpath ; fi
-      mv $ncfile.nc $ncfile_out # || mv $workpath'MRR2_'$yy$mm$dd'-corrected.nc' $workpath'MRR2_'$yy$mm$dd$suffix'.nc'
-      chmod 664 $ncfile_out
-      chgrp metdata $ncfile_out
-    else
-      echo 'end time in nc and raw file disagree'
-      # clean up
-      mv $ncfile.nc $failpath
-      mv $workpath*.raw $failpath
+        # add global attributes to nc-file
+        . add_attr_MRR.sh $ncfile.nc
+
+        # rename and move nc file
+        if [ ! -d $outpath ]; then mkdir $outpath ; fi
+        mv $ncfile.nc $ncfile_out # || mv $workpath'MRR2_'$yy$mm$dd'-corrected.nc' $workpath'MRR2_'$yy$mm$dd$suffix'.nc'
+        chmod 664 $ncfile_out
+        chgrp metdata $ncfile_out
+      else
+        echo 'end time in nc and raw file disagree'
+        # clean up
+        mv $ncfile.nc $failpath
+        mv $workpath*.raw $failpath
+      fi
     fi
   fi
+
   # clean up remaining *.raw files
   rm $workpath*.raw
-
-  fi
 
 else
   echo $ncfile_out' already exists'
