@@ -288,22 +288,23 @@ def CorrectorFile(fid,hres):
     lc=0
     while lc<file_length-1: #line := f.readline():
 #        continue_while1=True
-        # read first line 
+        # read first line and check that first line is header line starting with MRR and find it if not
         Mline=f.readline()
+#        print(lc, Mline)
         lc+=1
-        if Mline[-1:]!='\n':
+        if Mline[-1:]!='\n' or Mline[0:3]!='MRR':
             continue          
         line2=Mline.strip()  
         columns=line2.split()  
 
         # check that first line is header line starting with MRR and find it if not
-        while columns[0]!='MRR' and lc<file_length-1:
-            Mline=f.readline()           
-            lc+=1
-            if Mline[-1:]!='\n':
-                continue          
-            line2=Mline.strip()  
-            columns=line2.split()
+        # while columns[0]!='MRR' and lc<file_length-1:
+        #     Mline=f.readline()           
+        #     lc+=1
+        #     if Mline[-1:]!='\n' or Mline=='\n':
+        #         continue          
+        #     line2=Mline.strip()  
+        #     columns=line2.split()
         if len(columns)==1:              # something unusal
             longStr=2
             continue
@@ -507,9 +508,9 @@ def group(a,indexcentral,Nnan,d):
             else:
                 cont=0
             incr1+=1
+
         cont=0;
         incr2=1#starts at 1
-
         cond=1
         while cond:
             if cont>=Nnan or index-incr2<=0:
@@ -518,8 +519,8 @@ def group(a,indexcentral,Nnan,d):
                 cont+=1
             else:
                 cont=0
-
             incr2+=1
+
         vf2=np.copy(a);xf2=np.copy(d)
         vf2[0:index-incr2+1]=np.nan
         vf2[index+incr1:]=np.nan
@@ -650,6 +651,7 @@ def Process(matrix,he,temps,D):#This is the core from the preocessing
 
             av=np.where(etaN_da>=0.)
             av2=np.where(etaN[o]>=0.)
+            
             if np.size(av)==0 or np.size(av2)==0 or np.size(av2)==64:
                 ReVect=etaN_da*np.nan
                 INewV=Indvel*np.nan
@@ -665,6 +667,16 @@ def Process(matrix,he,temps,D):#This is the core from the preocessing
                 if INewV[np.nanargmax(ReVect)]<0:
                     S=.5
                     L=5.
+# here we get a problem since sigma3 is not redefined, instead the old value from previos iteration (o-1) is used. 
+# In case this value is NaN the script fails (state has wrong length). If the previous value of sigma3 is real, 
+# the script does not fail but is likely to produce a wrong results. Example file where it fails: test1.raw
+# From only looking at the code I assume the following three lines would fix the problem
+# If that's correct they can be run before the if statement. The following if cases 
+# have been convertet to if, elsif, else... to also capture cases where state would 
+# remain undefined, although this should not happen any more. 
+                    PT3=np.nansum(ReVect)
+                    w3=np.nansum(np.prod([ReVect,speeddeal],axis=0))/PT3#estimated velocity
+                    sigma3=np.sqrt(np.nansum(np.prod([ReVect,np.power(speeddeal-w3,2)],axis=0))/PT3)# spectral witdh
                 else:
                     PT3=np.nansum(ReVect)
                     w3=np.nansum(np.prod([ReVect,speeddeal],axis=0))/PT3#estimated velocity
@@ -684,7 +696,7 @@ def Process(matrix,he,temps,D):#This is the core from the preocessing
                 else:
                     mov.append(np.nan)
 
-            if abs(S)>(Cfact*abs(sigma3)) and abs(L)<=(Cfact*abs(sigma3)):#case liquid
+            elif abs(S)>(Cfact*abs(sigma3)) and abs(L)<=(Cfact*abs(sigma3)):#case liquid
                 state.append(10)
                 if np.nanmin(INewV)<0 or np.nanmax(INewV)>12:
                     if np.nanmin(INewV)<0:
@@ -693,7 +705,8 @@ def Process(matrix,he,temps,D):#This is the core from the preocessing
                         mov.append(1)
                 else:
                     mov.append(np.nan)
-            if np.isnan(L) and np.isnan(S):
+            
+            elif np.isnan(L) and np.isnan(S):
                 state.append(np.nan)
                 if np.nanmin(INewV)<0 or np.nanmax(INewV)>12:
                     if np.nanmin(INewV)<0:
@@ -702,7 +715,8 @@ def Process(matrix,he,temps,D):#This is the core from the preocessing
                         mov.append(1)
                 else:
                     mov.append(np.nan)
-            if abs(S)==abs(L) or (abs(L)<=(Cfact*abs(sigma3)) and abs(S)<=(Cfact*abs(sigma3))):#case mixed
+            
+            elif abs(S)==abs(L) or (abs(L)<=(Cfact*abs(sigma3)) and abs(S)<=(Cfact*abs(sigma3))):#case mixed
                 if INewV[np.nanargmax(ReVect)]<vwaterMie[o] and INewV[np.nanargmax(ReVect)]> vsnowR[o]:
                     state.append(0)#cas mixed
                 else:
@@ -719,7 +733,7 @@ def Process(matrix,he,temps,D):#This is the core from the preocessing
                 else:
                     mov.append(np.nan)
 
-            if np.isnan(S) and ~np.isnan(L):#case liquid, but possible wrong election
+            elif np.isnan(S) and ~np.isnan(L):#case liquid, but possible wrong election
                 state.append(10)
                 if abs(L)>=limitValueDeal:
                     LonCut=int(len(etaN[o]))
@@ -731,7 +745,7 @@ def Process(matrix,he,temps,D):#This is the core from the preocessing
                 else:
                     mov.append(np.nan)
 
-            if ~np.isnan(S) and np.isnan(L):#case not liquid, but possible wrong election
+            elif ~np.isnan(S) and np.isnan(L):#case not liquid, but possible wrong election
                 state.append(-10)
                 if S>=limitValueDeal:
                     LonCut=int(len(etaN[o])/2)
@@ -744,7 +758,7 @@ def Process(matrix,he,temps,D):#This is the core from the preocessing
                 else:
                     mov.append(np.nan)
 
-            if abs(L)>(Cfact*abs(sigma3)) and abs(S)>(Cfact*abs(sigma3)):#difficult case
+            elif abs(L)>(Cfact*abs(sigma3)) and abs(S)>(Cfact*abs(sigma3)):#difficult case
                 if abs(L)>=limitValueDeal and abs(S)>=limitValueDeal:#wrong election
                     if L-limitValueDeal<=0 or S-limitValueDeal<=0:#v expected is bigger than the found. Shift the vector from 128-32 to 128+32
                         if np.isnan(etaN_da[96:160]).all():
@@ -829,8 +843,12 @@ def Process(matrix,he,temps,D):#This is the core from the preocessing
 
                     state.append(-10)
                     mov.append(np.nan)
+                    
+            else:
+                state.append(np.nan)
 
             NewM.append(ReVect)
+#            print(o,len(state)-1)
 
         valuemax=[]
         for m in range(len(NewM)):
@@ -857,15 +875,17 @@ def Process(matrix,he,temps,D):#This is the core from the preocessing
                     IDX=indx-64
                 else:
                     IDX=indx
-                CoVector,daig=group(Vector,IDX,5,Indvel)#function to find the group of values
-                NewM[int(indole[0]+1)]=CoVector
+#                CoVector,daig=group(Vector,IDX,5,Indvel)#function to find the group of values
+#                NewM[int(indole[0]+1)]=CoVector
             else:
                 if indx<(64+32):
                     IDX=indx+32
                 else:
                     IDX=indx+64
-                CoVector,daig=group(Vector,IDX,5,Indvel)#function to find the group of values
-                NewM[int(indole[0]+1)]=CoVector
+            if IDX>len(Vector):         # quick and dirty fix to avoid the script failing when IDX is out of bounds
+                break
+            CoVector,daig=group(Vector,IDX,5,Indvel)#function to find the group of values
+            NewM[int(indole[0]+1)]=CoVector
             newZe=10**18*lamb**4*np.nansum(CoVector)*Deltav/K2w
             NvwaterR=2.65*np.power(newZe,.114)#values a,b from Atlas et al. 1973
             NvsnowR=.817*np.power(newZe,.063)#values a,b from Atlas et al. 1973
@@ -1021,6 +1041,10 @@ def Process(matrix,he,temps,D):#This is the core from the preocessing
 
             PIA_total.append(pia)
 
+#            if m==len(state):
+#                print('something wrong?')
+#                print(m,len(state)) 
+#                state.append(np.nan)
             if state[m]==10:#rain case
                 Mwater.append(NewM[m])
                 SnowRate.append(np.nan)
@@ -1199,7 +1223,7 @@ def Process(matrix,he,temps,D):#This is the core from the preocessing
                 VerTur.append(np.nan)
                 PIA.append(np.nan)
 
-            if state[m]==20:#cas unknown
+            if state[m]==20:#case unknown
                 Munk.append(NewM[m])
                 Value=10**18*lamb**4*np.nansum(NewM[m])/(np.pi**5*K2w)#use the rayleight estimation
 
@@ -1665,31 +1689,23 @@ for name in dircf:
     countwork=0
 
     while 1:
-
-        if countwork==7:
-            sys.stdout.write('\b\b\b\b\b\b\b-------\r')
-            countwork=0
         if countwork==0:
             sys.stdout.write('working')
-
-        if countwork==6:
-            sys.stdout.write('\b\b\b\b\b\b\bw-rking\r')
-
-        if countwork==5:
-            sys.stdout.write('\b\b\b\b\b\b\bwo-king\r')
-
-        if countwork==4:
-            sys.stdout.write('\b\b\b\b\b\b\bwor-ing\r')
-
-        if countwork==3:
-            sys.stdout.write('\b\b\b\b\b\b\bwork-ng\r')
-
-        if countwork==2:
-            sys.stdout.write('\b\b\b\b\b\b\bworki-g\r')
-
-        if countwork==1:
+        elif countwork==1:
             sys.stdout.write('\b\b\b\b\b\b\bworkin-\r')
-
+        elif countwork==2:
+            sys.stdout.write('\b\b\b\b\b\b\bworki-g\r')
+        elif countwork==3:
+            sys.stdout.write('\b\b\b\b\b\b\bwork-ng\r')
+        elif countwork==4:
+            sys.stdout.write('\b\b\b\b\b\b\bwor-ing\r')
+        elif countwork==5:
+            sys.stdout.write('\b\b\b\b\b\b\bwo-king\r')
+        elif countwork==6:
+            sys.stdout.write('\b\b\b\b\b\b\bw-rking\r')
+        elif countwork==7:
+            sys.stdout.write('\b\b\b\b\b\b\b-orking\r')
+            countwork=0
         countwork+=1
 
         line=f.readline()
