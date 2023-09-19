@@ -6,14 +6,15 @@
 import numpy as np
 import calendar
 import datetime
-# import time
+# import time			### package is not needed
 import miepython as mp
 from math import e
-from netCDF4 import Dataset,date2num#,num2date
+from netCDF4 import Dataset,date2num   #,num2date ### not needed
 import glob
 import os
 import sys
 import shutil
+### not needed packages
 #import subprocess
 #import netCDF4 as nc4
 #import matplotlib.pyplot as plt
@@ -109,8 +110,8 @@ def Rain_Par(state,Z,LWC,RR,Nw,Dm,NewM,D,N_da,NdE,he,w,Pia):
                 EtaV=NewM[m][64:64*2]#interval for water choosed
                 value=6.18*EtaV[n]*dv[m]*e**(-1*0.6*D[m][n])#units m-1 mm-1
                 s=SigmaScatt[m][n]
-                value2=(10**6)*(value/s)#N in m^-3 mm-1
-                nde.append(value2)#units mm-1 m^-3
+                value2=(10**6)*(value/s)	#N in m^-3 mm-1
+                nde.append(value2)		#units mm-1 m^-3
 
             LastN=nde
             NdE[m]=LastN
@@ -142,7 +143,7 @@ def Rain_Par(state,Z,LWC,RR,Nw,Dm,NewM,D,N_da,NdE,he,w,Pia):
                 Nw[m]=np.nan
             else:
                 Dm[m]=(value4/value2)
-                Nw[m]=(np.log10(256.*(roW*value2*(np.pi/6.))/ (np.pi*roW*(value4/value2)**4)))#units m^-3 mm-1
+                Nw[m]=(np.log10(256.*(roW*value2*(np.pi/6.))/ (np.pi*roW*(value4/value2)**4)))	#units m^-3 mm-1
         else:
             PIA.append(np.nan)
 
@@ -253,7 +254,7 @@ def BB(v,Z,h):#the input are fall speed, equivalent reflectivity and height
 
     return hBBbottom,hBBtop
 
-def CorrectorFile(fid,hres):
+def CorrectorFile(fid,hres):	### additional input variable for height resolution
     NameFile=fid
     FileCorre=NameFile[:-4]+'-corrected.raw' #create a new file
     folderName='Moved'
@@ -606,8 +607,8 @@ def Process(matrix,he,temps,D):#This is the core from the preocessing
             value3=(9.65-10.3*e**(-1*0.6*D[m][n]))*dv[m]
             velHail.append(13.96*np.sqrt(10*D[m][n]))#vel from Hail Ulbrich and atlas 1982
             sbk=SigmaScatt[m][n]
-            value2=(10**6)*(value/sbk)#N in m^-3 mm^-1
-            nde.append(value2)#units mm^-1 m^-3
+            value2=(10**6)*(value/sbk)	#N in m^-3 mm^-1
+            nde.append(value2)		#units mm^-1 m^-3
             vt.append(value3)#terminal speed in function heigh and diameter
         Vhail.append(velHail)
         VT.append(vt)
@@ -667,13 +668,13 @@ def Process(matrix,he,temps,D):#This is the core from the preocessing
                 if INewV[np.nanargmax(ReVect)]<0:
                     S=.5
                     L=5.
-# here we get a problem since sigma3 is not redefined, instead the old value from previos iteration (o-1) is used. 
-# In case this value is NaN the script fails (state has wrong length). If the previous value of sigma3 is real, 
-# the script does not fail but is likely to produce a wrong results. Example file where it fails: test1.raw
-# From only looking at the code I assume the following three lines would fix the problem
-# If that's correct they can be run before the if statement. The following if cases 
-# have been convertet to if, elsif, else... to also capture cases where state would 
-# remain undefined, although this should not happen any more. 
+### here we get a problem since sigma3 is not redefined, instead the old value from previos iteration (o-1) is used. 
+### In case this value is NaN the script fails (state has wrong length). If the previous value of sigma3 is real, 
+### the script does not fail but is likely to produce a wrong results. Example file where it fails: test1.raw
+### From only looking at the code I assume the following three lines would fix the problem
+### If that's correct they can be run before the if statement. The following if cases 
+### have been convertet to if, elsif, else... to also capture cases where state would 
+### remain undefined, although this should not happen any more. 
                     PT3=np.nansum(ReVect)
                     w3=np.nansum(np.prod([ReVect,speeddeal],axis=0))/PT3#estimated velocity
                     sigma3=np.sqrt(np.nansum(np.prod([ReVect,np.power(speeddeal-w3,2)],axis=0))/PT3)# spectral witdh
@@ -882,7 +883,7 @@ def Process(matrix,he,temps,D):#This is the core from the preocessing
                     IDX=indx+32
                 else:
                     IDX=indx+64
-            if IDX>len(Vector):         # quick and dirty fix to avoid the script failing when IDX is out of bounds
+            if IDX>len(Vector):         ### quick and dirty fix to avoid the script failing when IDX is out of bounds
                 break
             CoVector,daig=group(Vector,IDX,5,Indvel)#function to find the group of values
             NewM[int(indole[0]+1)]=CoVector
@@ -1011,13 +1012,13 @@ def Process(matrix,he,temps,D):#This is the core from the preocessing
                 EtaV=NewM[m][64:64*2]#interval for water choosed
                 value=6.18*EtaV[n]*dv[m]*e**(-1*0.6*D[m][n])
                 s=SigmaScatt[m][n]
-                value2=(10**6)*(value/s)#N in m^-3 mm-1
-                nde.append(value2)#units mm-1 m^-3
+                value2=(10**6)*(value/s)	#N in m^-3 mm-1
+                nde.append(value2)		#units mm-1 m^-3
 
             ##                APPLY THE ATTENUATTION
             DeltaR=he[3]-he[2]
 
-            Np=np.multiply(nde,PIA_total[-1])#m^-3 mm-1
+            Np=np.multiply(nde,PIA_total[-1])	#m^-3 mm-1
             Pro=[]
             for k in range(len(Np)):
                 pro=SigmaExt[m][k]*Np[k]*dif[k]
@@ -1025,7 +1026,7 @@ def Process(matrix,he,temps,D):#This is the core from the preocessing
 
             kp=np.nansum(Pro)*10**-6#m-1
             num=2.*kp*DeltaR#WHERE DeltaR is m
-            N=-1.*np.multiply(Np,np.log(1-num)/num)#units mm-1 m^-3
+            N=-1.*np.multiply(Np,np.log(1-num)/num)	#units mm-1 m^-3
             Pro2=[]
             for k in range(len(N)):
                 pro2=SigmaExt[m][k]*N[k]*dif[k]
@@ -1071,8 +1072,8 @@ def Process(matrix,he,temps,D):#This is the core from the preocessing
                     EtaV=NewM[m][64:64*2]#interval for water choosed
                     value=6.18*EtaV[n]*dv[m]*e**(-1*0.6*D[m][n])
                     s=SigmaScatt[m][n]
-                    value2=(10**6)*(value/s)#N in m^-3 mm-1
-                    nde.append(value2)#units mm-1 m^-3
+                    value2=(10**6)*(value/s)		#N in m^-3 mm-1
+                    nde.append(value2)		#units mm-1 m^-3
 
                 #Calculate the diameter from the mean vel found
                 diaWork=D[m]
@@ -1576,7 +1577,7 @@ for name in dircf:
         os.remove(filenameplot+'.nc')
     
     dataset=Dataset(filenameplot+'.nc','w',format='NETCDF4')
-    #dataset.description='Data processed by MRR radar'
+    #dataset.description='Data processed by MRR radar'	### added in seperate bash script
     #dataset.author='Albert Garcia Benad'+u'\xed'
     #dataset.orcid='0000-0002-5560-4392 '
 
