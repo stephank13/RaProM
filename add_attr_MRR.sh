@@ -15,7 +15,7 @@ ncatted -O -h \
   -a instrument,global,c,c,"Micro Rain Radar (MRR-2)" \
   -a instrument_manufacturer,global,c,c,"Metek GmbH, Germany" \
   -a creation_note,global,c,c,"Created with modified version of RaProM_38.py, by Albert Garcia Benadi (orcid: 0000-0002-5560-4392)" \
-  -a software_citation,global,c,c"Garcia-Benadi, A.; Bech, J.; Gonzalez, S.; Udina, M.; Codina, B.; Georgis, J.-F. Precipitation Type Classification of Micro Rain Radar Data Using an Improved Doppler Spectral Processing Methodology. Remote Sens. 2020, 12, 4113. https://doi.org/10.3390/rs12244113" \
+  -a software_citation,global,c,c,"Garcia-Benadi, A.; Bech, J.; Gonzalez, S.; Udina, M.; Codina, B.; Georgis, J.-F. Precipitation Type Classification of Micro Rain Radar Data Using an Improved Doppler Spectral Processing Methodology. Remote Sens. 2020, 12, 4113. https://doi.org/10.3390/rs12244113" \
   -a service_version,global,c,c,"6.0.0.6" \
   -a instrument_sampling_rate,global,c,c,"125 kHz" \
   -a height_resolution,global,c,c,"100 m" \
